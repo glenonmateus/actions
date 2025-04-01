@@ -17,23 +17,6 @@ on:
           @semantic-release/changelog@6.0.3
           @semantic-release/git@10.0.1
           conventional-changelog-conventionalcommits@7.0.2
-      semantic_branches:
-        required: false
-        type: string
-        default: |
-          [
-            {
-              "name": "main",
-            },
-            {
-              "name": "hml",
-              "prerelease": beta
-            }
-          ]
-      semantic_ci:
-        required: false
-        type: boolean
-        default: false
     secrets:
       semantic_release_token:
         description: "A token passed from the caller workflow"
@@ -51,17 +34,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Execute Semantic Release
-        run: |
-          echo "Executing Semantic Release"
-
-      # - name: Release
-      #   uses: cycjimmy/semantic-release-action@v4
-      #   with:
-      #     semantic_version: ${{ inputs.semantic_version }}
-      #     extra_plugins: ${{ inputs.semantic_extra_plugins }}
-      #     tag_format: ${version}
-      #     branches: ${{ inputs.semantic_branches }}
-      #     ci: ${{ inputs.semantic_ci }}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.semantic_release_token }}
+      - name: Release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          semantic_version: ${{ inputs.semantic_version }}
+          extra_plugins: ${{ inputs.semantic_extra_plugins }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.semantic_release_token }}
