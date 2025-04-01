@@ -4,13 +4,16 @@ on:
   workflow_call:
     inputs:
       repository_owner:
+        description: "The owner of the repository"
         required: true
         type: string
       semantic_version:
+        description: "The semantic release version"
         required: false
         type: string
         default: 23.0.2
       semantic_extra_plugins:
+        description: "The extra plugins to use for semantic release"
         required: false
         type: string
         default: |
@@ -23,7 +26,6 @@ on:
         required: true
 jobs:
   release:
-    name: Release
     runs-on: ubuntu-latest
     # Skip running release workflow on forks
     if: github.repository_owner == ${{ inputs.repository_owner }}
