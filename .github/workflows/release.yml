@@ -36,6 +36,11 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Run jq
+        run: |
+          echo "Exec jq"
+          jq 'del(.plugins[3,4])' .releaserc.json
+
       - name: Release
         uses: cycjimmy/semantic-release-action@v4
         with:
