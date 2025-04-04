@@ -31,5 +31,5 @@ jobs:
         run: |
           git fetch origin
           git checkout ${{ inputs.to_branch }}
-          git merge ${{ inputs.from_branch }} -X theirs
+          git merge ${{ inputs.from_branch }}
           git push origin ${{ inputs.to_branch }}
