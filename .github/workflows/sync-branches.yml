@@ -3,19 +3,15 @@ name: Sync Branches
 on:
   workflow_call:
     inputs:
-      from_branch:
+      branch:
         description: ""
         required: true
         type: string
-      to_branch:
-        description: ""
-        required: true
-        type: string
-      merge_method:
+      force:
         description: ""
         required: false
         type: string
-        default: merge
+        default: false
     secrets:
       token:
         description: ""
@@ -31,16 +27,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: connor-baer/action-sync-branch@main
         with:
-          node-version: 12
-
-      - name: Opening pull request
-        id: pull
-        uses: tretuna/sync-branches@1.4.0
-        with:
-          GITHUB_TOKEN: ${{ secrets.token }}
-          FROM_BRANCH: ${{ inputs.from_branch }}
-          TO_BRANCH: ${{ inputs.to_branch }}
-          PULL_REQUEST_AUTO_MERGE_METHOD: ${{ inputs.merge_method }}
+          token: ${{ secrets.token }}
+          branch: ${{ inputs.branch }}
+          force: ${{ inputs.force }}
