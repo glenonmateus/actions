@@ -11,6 +11,10 @@ on:
         description: ""
         required: false
         type: string
+    secrets:
+      token:
+        description: ""
+        required: true
 
 jobs:
   branch-sync:
@@ -22,14 +26,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up git
-        run: |
-          git config --global user.name "Github Actions"
-          git config --global user.email "@github.com"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 12
 
-      - name: Push change from ${{ inputs.from_branch }} to ${{ inputs.to_branch }}
-        run: |
-          git fetch origin
-          git checkout ${{ inputs.to_branch }}
-          git merge ${{ inputs.from_branch }}
-          git push origin ${{ inputs.to_branch }}
+      - name: Opening pull request
+        id: pull
+        uses: tretuna/sync-branches@1.4.0
+        with:
+          GITHUB_TOKEN: ${{ secrets.token }}
+          FROM_BRANCH: ${{ inputs.from_branch }}
+          TO_BRANCH: ${{ inputs.to_branch }}
