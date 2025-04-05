@@ -5,12 +5,17 @@ on:
     inputs:
       from_branch:
         description: ""
-        required: false
+        required: true
         type: string
       to_branch:
         description: ""
+        required: true
+        type: string
+      merge_method:
+        description: ""
         required: false
         type: string
+        default: merge
     secrets:
       token:
         description: ""
@@ -38,3 +43,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.token }}
           FROM_BRANCH: ${{ inputs.from_branch }}
           TO_BRANCH: ${{ inputs.to_branch }}
+          PULL_REQUEST_AUTO_MERGE_METHOD: ${{ inputs.merge_method }}
