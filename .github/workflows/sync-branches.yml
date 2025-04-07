@@ -30,7 +30,7 @@ jobs:
       - name: Push change from ${{ inputs.from_branch }} to ${{ inputs.to_branch }}
         run: |
           echo "Pushing ${{ inputs.from_branch }} to ${{ inputs.to_branch }}"
-          git fetch origin
+          git pull
           git checkout ${{ inputs.to_branch }}
           git merge ${{ inputs.from_branch }}
-          git push origin ${{ inputs.to_branch }}
+          git push
