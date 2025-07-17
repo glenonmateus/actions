@@ -1,0 +1,107 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      ecr_repository:
+        description: "ECR Repository"
+        required: true
+        type: string
+      node_version:
+        description: "Node.js Version"
+        required: false
+        type: string
+        default: 12
+      helm_version:
+        description: "Helm Version"
+        required: false
+        default: v3.12.3
+        type: string
+      aws_region:
+        description: "AWS Region"
+        required: false
+        default: sa-east-1
+        type: string
+      ecr_registry:
+        description: "ECR Registry"
+        required: false
+        default: 999999999 #important
+        type: string
+    secrets:
+      aws_access_key_id:
+        description: "AWS Access Key ID"
+        required: true
+      aws_secret_access_key:
+        description: "AWS Secret Access Key"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: ${{ inputs.helm_version }}
+      - name: Setup Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Run Dockerfile linter
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ inputs.aws_region }}
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+        with:
+          registries: ${{ inputs.ecr_registry }}
+          mask-password: true
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION=sha-${GITHUB_SHA::8}
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          fi
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "REVISION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+      - name: Generate images meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr_repository }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.prep.outputs.VERSION }}
+            type=raw,value=${{ steps.prep.outputs.REVISION }}
+      - name: Publish image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./Dockerfile
+          build-args: |
+            NODE_VERSION=${{ inputs.node_version }}
+          tags: ${{ steps.meta.outputs.tags }}
+      - name: Vunerability image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr_repository }}:${{ github.ref_name }}"
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          # exit-code: "1"
+          ignore-unfixed: true
+      - name: Publish Helm chart to ECR
+        run: |
+          helm package charts/${{ inputs.ecr_repository }} --version ${{ steps.prep.outputs.VERSION }}
+          helm push ${{ inputs.ecr_repository }}-${{ steps.prep.outputs.VERSION }}.tgz oci://${{ steps.login-ecr.outputs.registry }}/chart
+          rm ${{ inputs.ecr_repository }}-${{ steps.prep.outputs.VERSION }}.tgz
